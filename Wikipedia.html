@@ -1,0 +1,333 @@
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wikipedia Search Tools</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<style>
+  body {
+    background-color: #f9f9f9; /* Changed background color */
+    color: #333; /* Changed text color */
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    position: relative;
+  }
+  
+  .container {
+    margin-top: 50px;
+  }
+  
+  .form-control {
+    background-color: #fff; /* Changed search bar background color */
+    color: #333; /* Changed search bar text color */
+    border-color: #ccc; /* Changed search bar border color */
+    transition: all 0.3s ease; /* Added transition effect */
+    position: relative;
+  }
+  
+  .form-control::placeholder {
+    opacity: 0; /* Hide placeholder initially */
+    transition: opacity 0.5s ease; /* Added transition effect */
+  }
+  
+  .form-control.typing::placeholder {
+    opacity: 1; /* Show placeholder when typing */
+  }
+  
+  .form-control:focus {
+    border-color: #b80257; /* Changed search bar border color on focus */
+    box-shadow: 0 0 5px rgba(184, 2, 87, 0.5); /* Added box shadow on focus */
+  }
+  
+  #output {
+    display: none; /* Hide search results by default */
+  }
+  
+  #output a {
+    color: #b80257; /* Changed search result text color */
+    text-decoration: none;
+    display: block;
+    margin-bottom: 10px;
+    opacity: 0; /* Initially set opacity to 0 for animation */
+    transform: translateY(20px); /* Initially move search results down */
+    transition: opacity 0.5s ease, transform 0.5s ease; /* Added transition effects */
+  }
+  
+  #output a.show {
+    opacity: 1; /* Show search results */
+    transform: translateY(0); /* Move search results back to original position */
+  }
+
+  #saveToExcel {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 999;
+    background-color: #b80257;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    padding: 10px 15px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+  }
+
+  #saveToExcel:hover {
+    background-color: #93394e;
+    transform: scale(1.1);
+  }
+
+  #saveToExcel .circle-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 12px;
+    text-align: center;
+    white-space: nowrap;
+    transform-origin: 50% 50%;
+    animation: rotateText 4s infinite linear;
+  }
+
+  @keyframes rotateText {
+    from {
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+    to {
+      transform: translate(-50%, -50%) rotate(360deg);
+    }
+  }
+
+  .save-text {
+    position: fixed;
+    bottom: 70px;
+    right: 10px;
+    font-size: 14px;
+    color: #b80257;
+  }
+
+  .radio-group {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .radio-group label {
+    margin-right: 10px;
+  }
+
+  .radio-group input[type="radio"] {
+    display: none;
+  }
+
+  .radio-group label {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #b80257;
+    color: #fff;
+    text-align: center;
+    line-height: 30px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  .radio-group label:hover {
+    background-color: #93394e;
+  }
+
+  .radio-group input[type="radio"]:checked + label {
+    background-color: #93394e;
+  }
+
+  .developer-credit {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 999;
+    background-color: #b80257;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 15px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+  }
+
+  .developer-credit:hover {
+    background-color: #93394e;
+    transform: scale(1.1);
+  }
+
+  .popup-container {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .popup-content {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-6 offset-md-3">
+      <h1 class="text-center mb-4">Wikipedia Search Tools</h1>
+      <input type="text" id="search" class="form-control" placeholder="">
+      <div class="radio-group">
+        <input type="radio" id="searchLimit10" name="searchLimit" value="10" checked>
+        <label for="searchLimit10" style="background-color: #b80257;">10</label>
+        <input type="radio" id="searchLimit20" name="searchLimit" value="20">
+        <label for="searchLimit20" style="background-color: #455d7a;">20</label>
+        <input type="radio" id="searchLimit30" name="searchLimit" value="30">
+        <label for="searchLimit30" style="background-color: #f95959;">30</label>
+        <input type="radio" id="searchLimit50" name="searchLimit" value="50">
+        <label for="searchLimit50" style="background-color: #233142;">50</label>
+        <input type="radio" id="searchLimit100" name="searchLimit" value="100">
+        <label for="searchLimit100" style="background-color: #198754;">100</label>
+        <input type="radio" id="searchLimit200" name="searchLimit" value="200">
+        <label for="searchLimit200" style="background-color: #455d7a;">200</label>
+      </div>
+      <div id="output" class="mt-3"></div>
+    </div>
+  </div>
+</div>
+<div class="save-text">Save to Excel</div>
+<button id="saveToExcel" class="btn"><i class="fas fa-download"></i></button>
+
+<button id="developerCredit" class="developer-credit">Credit..</button>
+
+<div id="popupContainer" class="popup-container">
+  <div class="popup-content">
+    <h2>Developer Credits</h2>
+    <p>Designed By Anowar Hossain Rana</p>
+    <p>Contact: cxranabd@gmail.com</p>
+    <button id="closePopup" class="btn btn-primary">Close</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r124/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.0/xlsx.full.min.js"></script>
+<script>
+  var search = document.getElementById('search');
+  var output = document.getElementById('output');
+  var saveToExcelBtn = document.getElementById('saveToExcel');
+  var developerCreditBtn = document.getElementById('developerCredit');
+  var popupContainer = document.getElementById('popupContainer');
+
+  var placeholderText = "Search on Wikipedia";
+  var placeholderIndex = 0;
+  var typingSpeed = 100; // Adjust typing speed (milliseconds per character)
+
+  function typePlaceholder() {
+    if (placeholderIndex < placeholderText.length) {
+      search.setAttribute('placeholder', placeholderText.substring(0, placeholderIndex + 1));
+      placeholderIndex++;
+      setTimeout(typePlaceholder, typingSpeed);
+    } else {
+      search.classList.remove('typing');
+    }
+  }
+
+  search.addEventListener('focus', function(){
+    search.classList.add('typing');
+    typePlaceholder();
+  });
+
+  search.addEventListener('blur', function(){
+    search.classList.remove('typing');
+    placeholderIndex = 0;
+  });
+
+  search.addEventListener('input', function(){
+    // removing old script tags
+    var jsonpUrl = document.getElementById('jsonpUrl');
+    if (jsonpUrl !== null) {
+      document.body.removeChild(jsonpUrl);
+    }
+
+    var query = search.value.trim(); // Trim whitespace
+
+    if (query === '') {
+      output.style.display = 'none'; // Hide search results if query is empty
+      return;
+    }
+
+    var limit = document.querySelector('input[name="searchLimit"]:checked').value;
+
+    var url = "https://en.wikipedia.org/w/api.php?action=opensearch&search=" +
+              encodeURI(query) +
+              "&limit=" + limit + "&callback=myJsonpCallback&id=123";
+
+    var scriptEl = document.createElement('script');
+    scriptEl.setAttribute('id', 'jsonpUrl');
+    scriptEl.setAttribute('src', url);
+    document.body.appendChild(scriptEl);
+  });
+
+  window.myJsonpCallback = function(data) {
+    output.innerHTML = "";
+
+    for (var i = 0; i < data[1].length; i++) {
+      var a = document.createElement('a');
+      a.setAttribute('href', data[3][i]);
+      a.setAttribute('target', '_blank');
+      a.innerHTML = data[1][i];
+
+      output.appendChild(a);
+    }
+
+    output.style.display = 'block'; // Show search results
+    setTimeout(function() {
+      output.querySelectorAll('a').forEach(function(link) {
+        link.classList.add('show'); // Add 'show' class for animation
+      });
+    }, 100);
+  };
+
+  document.addEventListener('click', function(event){
+    if(event.target !== output && event.target !== search) {
+      output.style.display = 'none'; // Hide search results if clicked outside
+    }
+  });
+
+  saveToExcelBtn.addEventListener('click', function() {
+    var data = [['Wikipedia Search Tools By Anowar']];
+    var links = document.querySelectorAll('#output a');
+    links.forEach(function(link) {
+      data.push([link.textContent, link.href]);
+    });
+
+    var ws = XLSX.utils.aoa_to_sheet(data);
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Search Results');
+    XLSX.writeFile(wb, 'search_results.xlsx');
+  });
+
+  developerCreditBtn.addEventListener('click', function() {
+    popupContainer.style.display = 'flex';
+  });
+
+  document.getElementById('closePopup').addEventListener('click', function() {
+    popupContainer.style.display = 'none';
+  });
+  
+</script>
+</body>
